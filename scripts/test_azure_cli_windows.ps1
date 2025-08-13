@@ -19,16 +19,20 @@ python -m venv test_env
 # Upgrade pip and install build tools
 python -m pip install --upgrade pip setuptools wheel
 
-# Install azdev wheel (look in both possible locations)
+# Install azdev wheel (look in all possible locations)
 $WHEEL_FILE = $null
-if (Test-Path "..\artifacts\azdev-*.whl") {
+if (Test-Path "artifacts\azdev-*.whl") {
+    $WHEEL_FILE = Get-ChildItem -Path "artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
+} elseif (Test-Path "..\artifacts\azdev-*.whl") {
     $WHEEL_FILE = Get-ChildItem -Path "..\artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
 } elseif (Test-Path "azure-cli-dev-tools\dist\azdev-*.whl") {
     $WHEEL_FILE = Get-ChildItem -Path "azure-cli-dev-tools\dist\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
 }
 
 if (-not $WHEEL_FILE) {
-    Write-Host "Error: No azdev wheel found in ..\artifacts\ or azure-cli-dev-tools\dist\"
+    Write-Host "Error: No azdev wheel found in artifacts\, ..\artifacts\, or azure-cli-dev-tools\dist\"
+    Write-Host "Available files in artifacts\:"
+    Get-ChildItem -Path "artifacts\" -ErrorAction SilentlyContinue
     Write-Host "Available files in ..\artifacts\:"
     Get-ChildItem -Path "..\artifacts\" -ErrorAction SilentlyContinue
     Write-Host "Available files in azure-cli-dev-tools\dist\:"
@@ -38,9 +42,11 @@ if (-not $WHEEL_FILE) {
 Write-Host "Installing azdev wheel: $WHEEL_FILE"
 python -m pip install $WHEEL_FILE
 
-# Install azure-cli requirements (look in both possible locations)
+# Install azure-cli requirements (look in all possible locations)
 $REQUIREMENTS_FILE = $null
-if (Test-Path "..\artifacts\cross_azure_cli_requirements.txt") {
+if (Test-Path "artifacts\cross_azure_cli_requirements.txt") {
+    $REQUIREMENTS_FILE = "artifacts\cross_azure_cli_requirements.txt"
+} elseif (Test-Path "..\artifacts\cross_azure_cli_requirements.txt") {
     $REQUIREMENTS_FILE = "..\artifacts\cross_azure_cli_requirements.txt"
 } elseif (Test-Path "azure-cli\requirements.txt") {
     # Create temp requirements file without azdev

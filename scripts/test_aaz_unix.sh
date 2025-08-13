@@ -16,16 +16,20 @@ source test_env/bin/activate
 # Upgrade pip and install build tools
 python -m pip install --upgrade pip setuptools wheel
 
-# Install azdev wheel (look in both possible locations)
+# Install azdev wheel (look in all possible locations)
 WHEEL_FILE=""
-if [ -f "../artifacts/azdev-"*.whl ]; then
+if [ -f "artifacts/azdev-"*.whl ]; then
+    WHEEL_FILE=$(find artifacts/ -name "azdev-*.whl" | head -n1)
+elif [ -f "../artifacts/azdev-"*.whl ]; then
     WHEEL_FILE=$(find ../artifacts/ -name "azdev-*.whl" | head -n1)
 elif [ -f "azure-cli-dev-tools/dist/azdev-"*.whl ]; then
     WHEEL_FILE=$(find azure-cli-dev-tools/dist/ -name "azdev-*.whl" | head -n1)
 fi
 
 if [ -z "$WHEEL_FILE" ]; then
-  echo "Error: No azdev wheel found in ../artifacts/ or azure-cli-dev-tools/dist/"
+  echo "Error: No azdev wheel found in artifacts/, ../artifacts/, or azure-cli-dev-tools/dist/"
+  echo "Available files in artifacts/:"
+  ls -la artifacts/ 2>/dev/null || echo "artifacts/ directory not found"
   echo "Available files in ../artifacts/:"
   ls -la ../artifacts/ 2>/dev/null || echo "../artifacts/ directory not found"
   echo "Available files in azure-cli-dev-tools/dist/:"
@@ -35,9 +39,11 @@ fi
 echo "Installing azdev wheel: $WHEEL_FILE"
 python -m pip install "$WHEEL_FILE"
 
-# Install aaz-dev-tools requirements (look in both possible locations)
+# Install aaz-dev-tools requirements (look in all possible locations)
 REQUIREMENTS_FILE=""
-if [ -f "../artifacts/cross_aaz_requirements.txt" ]; then
+if [ -f "artifacts/cross_aaz_requirements.txt" ]; then
+    REQUIREMENTS_FILE="artifacts/cross_aaz_requirements.txt"
+elif [ -f "../artifacts/cross_aaz_requirements.txt" ]; then
     REQUIREMENTS_FILE="../artifacts/cross_aaz_requirements.txt"
 elif [ -f "aaz-dev-tools/requirements.txt" ]; then
     # Create temp requirements file without azdev
