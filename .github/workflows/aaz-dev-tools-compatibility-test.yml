@@ -13,6 +13,11 @@ on:
         required: true
         default: 'dev'
         type: string
+      azdev_build_python_version:
+        description: 'Python version to build azdev with'
+        required: true
+        default: '3.13'
+        type: string
       aaz_dev_tools_repo:
         description: 'AAZ Dev Tools repository (owner/repo)'
         required: true
@@ -26,7 +31,7 @@ on:
 
 jobs:
   build-azdev-py313:
-    name: "Build azdev with Python 3.13 on ${{ matrix.os }}"
+    name: "Build azdev with Python ${{ github.event.inputs.azdev_build_python_version }} on ${{ matrix.os }}"
     strategy:
       fail-fast: false
       matrix:
@@ -37,18 +42,18 @@ jobs:
     steps:
     - name: Echo build information
       run: |
-        echo "=== Building azdev with Python 3.13 ==="
+        echo "=== Building azdev with Python ${{ github.event.inputs.azdev_build_python_version }} ==="
         echo "Azure CLI Dev Tools: ${{ github.event.inputs.azdev_repo }} (branch: ${{ github.event.inputs.azdev_branch }})"
-        echo "Building on: ${{ matrix.os }} with Python 3.13"
+        echo "Building on: ${{ matrix.os }} with Python ${{ github.event.inputs.azdev_build_python_version }}"
         echo "============================================"
         
     - name: Checkout compatibility test repository
       uses: actions/checkout@v4
       
-    - name: Set up Python 3.13 for building
+    - name: Set up Python ${{ github.event.inputs.azdev_build_python_version }} for building
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: ${{ github.event.inputs.azdev_build_python_version }}
         
     - name: Clone azure-cli-dev-tools
       run: |
@@ -56,7 +61,7 @@ jobs:
         cd azure-cli-dev-tools
         git checkout ${{ github.event.inputs.azdev_branch }}
         
-    - name: Build azdev wheel with Python 3.13
+    - name: Build azdev wheel with Python ${{ github.event.inputs.azdev_build_python_version }}
       run: |
         cd azure-cli-dev-tools
         python -m pip install --upgrade pip setuptools wheel build
@@ -65,12 +70,12 @@ jobs:
     - name: Upload azdev wheel as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: azdev-wheel-${{ matrix.os }}-py313
+        name: azdev-wheel-${{ matrix.os }}-py${{ github.event.inputs.azdev_build_python_version }}
         path: azure-cli-dev-tools/dist/*.whl
         retention-days: 1
 
   test-aaz-dev-tools:
-    name: "Test aaz-dev-tools with azdev (Python ${{ matrix.python-version }} on ${{ matrix.os }})"
+    name: "aaz-dev-tools: Python ${{ matrix.python-version }} on ${{ matrix.os }} (azdev built with Py${{ github.event.inputs.azdev_build_python_version }})"
     needs: build-azdev-py313
     strategy:
       fail-fast: false
@@ -83,10 +88,10 @@ jobs:
     steps:
     - name: Echo test information
       run: |
-        echo "=== Testing aaz-dev-tools with Python 3.13 built azdev ==="
+        echo "=== Testing aaz-dev-tools with Python ${{ github.event.inputs.azdev_build_python_version }} built azdev ==="
         echo "AAZ Dev Tools: ${{ github.event.inputs.aaz_dev_tools_repo }} (branch: ${{ github.event.inputs.aaz_dev_tools_branch }})"
         echo "Testing on: ${{ matrix.os }} with Python ${{ matrix.python-version }}"
-        echo "Using azdev built with Python 3.13"
+        echo "Using azdev built with Python ${{ github.event.inputs.azdev_build_python_version }}"
         echo "============================================"
         
     - name: Checkout compatibility test repository
@@ -100,7 +105,7 @@ jobs:
     - name: Download azdev wheel
       uses: actions/download-artifact@v4
       with:
-        name: azdev-wheel-${{ matrix.os }}-py313
+        name: azdev-wheel-${{ matrix.os }}-py${{ github.event.inputs.azdev_build_python_version }}
         path: dist/
         
     - name: Clone aaz-dev-tools

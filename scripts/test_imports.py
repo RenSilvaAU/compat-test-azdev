@@ -6,13 +6,13 @@ def test_azdev_import():
     """Test that azdev can be imported and basic info accessed"""
     try:
         import azdev
-        print(f"✓ azdev version: {azdev.__VERSION__}")
-        print("✓ azdev imported successfully")
+        print(f"[OK] azdev version: {azdev.__VERSION__}")
+        print("[OK] azdev imported successfully")
     except ImportError as e:
-        print(f"✗ Failed to import azdev: {e}")
+        print(f"[FAIL] Failed to import azdev: {e}")
         raise
     except AttributeError as e:
-        print(f"✗ azdev imported but version not accessible: {e}")
+        print(f"[FAIL] azdev imported but version not accessible: {e}")
         raise
 
 def test_azdev_core_modules():
@@ -20,9 +20,9 @@ def test_azdev_core_modules():
     try:
         import azdev.utilities
         import azdev.operations
-        print("✓ Core azdev modules loaded successfully")
+        print("[OK] Core azdev modules loaded successfully")
     except ImportError as e:
-        print(f"✗ Failed to import core azdev modules: {e}")
+        print(f"[FAIL] Failed to import core azdev modules: {e}")
         raise
 
 def test_aaz_dev_tools_dependencies():
@@ -54,15 +54,15 @@ def test_aaz_dev_tools_dependencies():
                 import azure.mgmt.core
             else:
                 __import__(dep)
-            print(f"✓ {dep} imported successfully")
+            print(f"[OK] {dep} imported successfully")
         except ImportError as e:
-            print(f"✗ Failed to import {dep}: {e}")
+            print(f"[FAIL] Failed to import {dep}: {e}")
             failed_imports.append(dep)
     
     if failed_imports:
         raise ImportError(f"Failed to import dependencies: {', '.join(failed_imports)}")
     
-    print("✓ All aaz-dev-tools dependencies imported successfully")
+    print("[OK] All aaz-dev-tools dependencies imported successfully")
 
 def test_no_version_conflicts():
     """Basic test to ensure no obvious version conflicts"""
@@ -76,9 +76,9 @@ def test_no_version_conflicts():
         click.__version__
         setuptools.__version__
         
-        print("✓ No obvious version conflicts detected")
+        print("[OK] No obvious version conflicts detected")
     except Exception as e:
-        print(f"✗ Potential version conflict detected: {e}")
+        print(f"[FAIL] Potential version conflict detected: {e}")
         raise
 
 if __name__ == "__main__":

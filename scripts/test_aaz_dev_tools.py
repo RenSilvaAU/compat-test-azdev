@@ -6,22 +6,22 @@ def test_azdev_availability():
     """Test that azdev is available and working"""
     try:
         import azdev
-        print(f"✓ azdev version: {azdev.__VERSION__}")
-        print("✓ azdev imported successfully")
+        print(f"[OK] azdev version: {azdev.__VERSION__}")
+        print("[OK] azdev imported successfully")
     except ImportError as e:
-        print(f"✗ Failed to import azdev: {e}")
+        print(f"[FAIL] Failed to import azdev: {e}")
         raise
     except AttributeError as e:
-        print(f"✗ azdev imported but version not accessible: {e}")
+        print(f"[FAIL] azdev imported but version not accessible: {e}")
         raise
 
 def test_aaz_dev_tools_import():
     """Test that aaz-dev-tools can be imported"""
     try:
         import aaz_dev
-        print("✓ aaz-dev-tools imported successfully")
+        print("[OK] aaz-dev-tools imported successfully")
     except ImportError as e:
-        print(f"✗ Failed to import aaz-dev-tools: {e}")
+        print(f"[FAIL] Failed to import aaz-dev-tools: {e}")
         raise
 
 def test_aaz_dev_tools_core_modules():
@@ -37,23 +37,23 @@ def test_aaz_dev_tools_core_modules():
     for module in core_modules:
         try:
             __import__(module)
-            print(f"✓ {module} imported successfully")
+            print(f"[OK] {module} imported successfully")
         except ImportError as e:
-            print(f"✗ Failed to import {module}: {e}")
+            print(f"[FAIL] Failed to import {module}: {e}")
             failed_imports.append(module)
     
     if failed_imports:
-        print(f"⚠ Some core modules failed to import: {', '.join(failed_imports)}")
+        print(f"[WARN] Some core modules failed to import: {', '.join(failed_imports)}")
         # Don't fail the test as some modules might be optional
     else:
-        print("✓ All core aaz-dev-tools modules loaded successfully")
+        print("[OK] All core aaz-dev-tools modules loaded successfully")
 
 def test_azdev_aaz_integration():
     """Test basic integration between azdev and aaz-dev-tools"""
     try:
         # Test that azdev can see aaz-dev-tools commands
         import azdev.operations
-        print("✓ azdev operations module accessible")
+        print("[OK] azdev operations module accessible")
         
         # Basic smoke test
         import subprocess
@@ -63,12 +63,12 @@ def test_azdev_aaz_integration():
         result = subprocess.run([sys.executable, '-m', 'azdev', '--help'], 
                               capture_output=True, text=True, timeout=30)
         if result.returncode == 0:
-            print("✓ azdev CLI help command works")
+            print("[OK] azdev CLI help command works")
         else:
-            print(f"⚠ azdev CLI help returned non-zero exit code: {result.returncode}")
+            print(f"[WARN] azdev CLI help returned non-zero exit code: {result.returncode}")
             
     except Exception as e:
-        print(f"⚠ Integration test encountered issues: {e}")
+        print(f"[WARN] Integration test encountered issues: {e}")
         # Don't fail hard on integration issues
 
 def test_dependency_compatibility():
@@ -85,9 +85,9 @@ def test_dependency_compatibility():
         click.__version__
         flask.__version__
         
-        print("✓ Core dependencies are compatible")
+        print("[OK] Core dependencies are compatible")
     except Exception as e:
-        print(f"✗ Dependency compatibility issue: {e}")
+        print(f"[FAIL] Dependency compatibility issue: {e}")
         raise
 
 if __name__ == "__main__":
