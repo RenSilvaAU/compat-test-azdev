@@ -35,8 +35,8 @@ on:
         type: string
 
 jobs:
-  compat-test:
-    name: "Python ${{ matrix.python-version }} on ${{ matrix.os }} (azdev:${{ github.event.inputs.azdev_branch }}, aaz:${{ github.event.inputs.aaz_dev_tools_branch }})"
+  build-and-test-aaz-dev-tools:
+    name: "aaz-dev-tools: Python ${{ matrix.python-version }} on ${{ matrix.os }}"
     strategy:
       fail-fast: false
       matrix:
@@ -46,13 +46,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     steps:
-    - name: Echo repository and branch information
+    - name: Echo test information
       run: |
-        echo "=== Repository and Branch Information ==="
+        echo "=== Testing aaz-dev-tools with same Python version ==="
         echo "Azure CLI Dev Tools: ${{ github.event.inputs.azdev_repo }} (branch: ${{ github.event.inputs.azdev_branch }})"
         echo "AAZ Dev Tools: ${{ github.event.inputs.aaz_dev_tools_repo }} (branch: ${{ github.event.inputs.aaz_dev_tools_branch }})"
-        echo "Azure CLI: ${{ github.event.inputs.azure_cli_repo }} (branch: ${{ github.event.inputs.azure_cli_branch }})"
-        echo "Testing on: ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+        echo "Building and testing with Python ${{ matrix.python-version }} on ${{ matrix.os }}"
         echo "============================================"
         
     - name: Checkout compatibility test repository
@@ -69,13 +68,64 @@ jobs:
         cd azure-cli-dev-tools
         git checkout ${{ github.event.inputs.azdev_branch }}
         
-    - name: Clone aaz-dev-tools for requirements
+    - name: Clone aaz-dev-tools
       run: |
         git clone https://github.com/${{ github.event.inputs.aaz_dev_tools_repo }}.git aaz-dev-tools
         cd aaz-dev-tools
         git checkout ${{ github.event.inputs.aaz_dev_tools_branch }}
         
-    - name: Clone azure-cli for requirements
+    - name: Build azdev wheel
+      run: |
+        cd azure-cli-dev-tools
+        python -m pip install --upgrade pip setuptools wheel build
+        python -m build --wheel
+        
+    - name: Test aaz-dev-tools requirements (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        chmod +x scripts/cross_test_aaz_unix.sh
+        scripts/cross_test_aaz_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
+        
+    - name: Test aaz-dev-tools requirements (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        scripts\cross_test_aaz_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
+
+  build-and-test-azure-cli:
+    name: "azure-cli: Python ${{ matrix.python-version }} on ${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Echo test information
+      run: |
+        echo "=== Testing azure-cli requirements with same Python version ==="
+        echo "Azure CLI Dev Tools: ${{ github.event.inputs.azdev_repo }} (branch: ${{ github.event.inputs.azdev_branch }})"
+        echo "Azure CLI: ${{ github.event.inputs.azure_cli_repo }} (branch: ${{ github.event.inputs.azure_cli_branch }})"
+        echo "Building and testing with Python ${{ matrix.python-version }} on ${{ matrix.os }}"
+        echo "============================================"
+        
+    - name: Checkout compatibility test repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Clone azure-cli-dev-tools
+      run: |
+        git clone https://github.com/${{ github.event.inputs.azdev_repo }}.git azure-cli-dev-tools
+        cd azure-cli-dev-tools
+        git checkout ${{ github.event.inputs.azdev_branch }}
+        
+    - name: Clone azure-cli
       run: |
         git clone https://github.com/${{ github.event.inputs.azure_cli_repo }}.git azure-cli
         cd azure-cli
@@ -87,66 +137,14 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel build
         python -m build --wheel
         
-    - name: Prepare requirements file
-      shell: bash
-      run: |
-        echo "=== Original aaz-dev-tools requirements file ==="
-        cat aaz-dev-tools/requirements.txt
-        echo "=== Removing azdev entries ==="
-        # Copy requirements and remove azdev since we're building it from source
-        cp aaz-dev-tools/requirements.txt azure-cli-dev-tools/requirements_temp.txt
-        grep -v "^azdev" azure-cli-dev-tools/requirements_temp.txt > azure-cli-dev-tools/requirements_clean.txt || true
-        cp azure-cli-dev-tools/requirements_clean.txt scripts/requirements.txt
-        echo "=== Final requirements file (azdev removed) ==="
-        cat scripts/requirements.txt
-        
-    - name: Prepare azure-cli requirements file
-      shell: bash
-      run: |
-        echo "=== Original azure-cli requirements file ==="
-        cat azure-cli/requirements.txt
-        echo "=== Removing azdev entries ==="
-        # Copy requirements and remove azdev since we're building it from source
-        cp azure-cli/requirements.txt azure_cli_requirements_temp.txt
-        grep -v "^azdev" azure_cli_requirements_temp.txt > azure_cli_requirements_clean.txt || true
-        cp azure_cli_requirements_clean.txt azure-cli-dev-tools/azure-cli-requirements.txt
-        echo "=== Final azure-cli requirements file (azdev removed) ==="
-        cat azure-cli-dev-tools/azure-cli-requirements.txt
-        
-    - name: Run compatibility test (Unix)
+    - name: Test azure-cli requirements (Unix)
       if: runner.os != 'Windows'
       run: |
-        chmod +x scripts/test_compatibility_unix.sh
-        cd azure-cli-dev-tools
-        ../scripts/test_compatibility_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
+        chmod +x scripts/cross_test_azure_cli_unix.sh
+        scripts/cross_test_azure_cli_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
         
-    - name: Run azure-cli requirements test (Unix)
-      if: runner.os != 'Windows'
-      run: |
-        chmod +x scripts/same_test_azure_cli_unix.sh
-        cd azure-cli-dev-tools
-        ../scripts/same_test_azure_cli_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
-        
-    - name: Run compatibility test (Windows)
+    - name: Test azure-cli requirements (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        cd azure-cli-dev-tools
-        ..\scripts\test_compatibility_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
-        
-    - name: Run azure-cli requirements test (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        cd azure-cli-dev-tools
-        ..\scripts\same_test_azure_cli_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
-        
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-${{ matrix.os }}-python${{ matrix.python-version }}
-        path: |
-          azure-cli-dev-tools/test_env/
-          azure-cli-dev-tools/dist/
-        retention-days: 5
+        scripts\cross_test_azure_cli_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
