@@ -1,0 +1,145 @@
+name: AAZ Dev Tools with Python 3.13 Built AzDev
+
+on:
+  workflow_dispatch:
+    inputs:
+      azdev_repo:
+        description: 'Azure CLI Dev Tools repository (owner/repo)'
+        required: true
+        default: 'Azure/azure-cli-dev-tools'
+        type: string
+      azdev_branch:
+        description: 'Branch to build azdev from'
+        required: true
+        default: 'dev'
+        type: string
+      aaz_dev_tools_repo:
+        description: 'AAZ Dev Tools repository (owner/repo)'
+        required: true
+        default: 'Azure/aaz-dev-tools'
+        type: string
+      aaz_dev_tools_branch:
+        description: 'Branch to test aaz-dev-tools from'
+        required: true
+        default: 'main'
+        type: string
+
+jobs:
+  build-azdev-py313:
+    name: "Build azdev with Python 3.13 on ${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Echo build information
+      run: |
+        echo "=== Building azdev with Python 3.13 ==="
+        echo "Azure CLI Dev Tools: ${{ github.event.inputs.azdev_repo }} (branch: ${{ github.event.inputs.azdev_branch }})"
+        echo "Building on: ${{ matrix.os }} with Python 3.13"
+        echo "============================================"
+        
+    - name: Checkout compatibility test repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python 3.13 for building
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        
+    - name: Clone azure-cli-dev-tools
+      run: |
+        git clone https://github.com/${{ github.event.inputs.azdev_repo }}.git azure-cli-dev-tools
+        cd azure-cli-dev-tools
+        git checkout ${{ github.event.inputs.azdev_branch }}
+        
+    - name: Build azdev wheel with Python 3.13
+      run: |
+        cd azure-cli-dev-tools
+        python -m pip install --upgrade pip setuptools wheel build
+        python -m build --wheel
+        
+    - name: Upload azdev wheel as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: azdev-wheel-${{ matrix.os }}-py313
+        path: azure-cli-dev-tools/dist/*.whl
+        retention-days: 1
+
+  test-aaz-dev-tools:
+    name: "Test aaz-dev-tools with azdev (Python ${{ matrix.python-version }} on ${{ matrix.os }})"
+    needs: build-azdev-py313
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Echo test information
+      run: |
+        echo "=== Testing aaz-dev-tools with Python 3.13 built azdev ==="
+        echo "AAZ Dev Tools: ${{ github.event.inputs.aaz_dev_tools_repo }} (branch: ${{ github.event.inputs.aaz_dev_tools_branch }})"
+        echo "Testing on: ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+        echo "Using azdev built with Python 3.13"
+        echo "============================================"
+        
+    - name: Checkout compatibility test repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Download azdev wheel
+      uses: actions/download-artifact@v4
+      with:
+        name: azdev-wheel-${{ matrix.os }}-py313
+        path: dist/
+        
+    - name: Clone aaz-dev-tools
+      run: |
+        git clone https://github.com/${{ github.event.inputs.aaz_dev_tools_repo }}.git aaz-dev-tools
+        cd aaz-dev-tools
+        git checkout ${{ github.event.inputs.aaz_dev_tools_branch }}
+        
+    - name: Prepare requirements file
+      shell: bash
+      run: |
+        echo "=== Original aaz-dev-tools requirements file ==="
+        cat aaz-dev-tools/requirements.txt
+        echo "=== Removing azdev entries ==="
+        # Copy requirements and remove azdev since we're using our built wheel
+        cp aaz-dev-tools/requirements.txt requirements_temp.txt
+        grep -v "^azdev" requirements_temp.txt > requirements_clean.txt || true
+        cp requirements_clean.txt scripts/requirements.txt
+        echo "=== Final requirements file (azdev removed) ==="
+        cat scripts/requirements.txt
+        
+    - name: Test aaz-dev-tools with azdev (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        chmod +x scripts/test_aaz_dev_tools_unix.sh
+        scripts/test_aaz_dev_tools_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
+        
+    - name: Test aaz-dev-tools with azdev (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        scripts\test_aaz_dev_tools_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
+        
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: aaz-test-results-${{ matrix.os }}-python${{ matrix.python-version }}
+        path: |
+          test_env/
+          dist/
+        retention-days: 5
