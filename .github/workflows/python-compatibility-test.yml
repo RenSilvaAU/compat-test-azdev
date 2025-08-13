@@ -73,6 +73,9 @@ jobs:
     - name: Prepare requirements file
       shell: bash
       run: |
+        echo "=== Original aaz-dev-tools requirements file ==="
+        cat aaz-dev-tools/requirements.txt
+        echo "=== Removing azdev entries ==="
         # Copy requirements and remove azdev since we're building it from source
         cp aaz-dev-tools/requirements.txt azure-cli-dev-tools/requirements_temp.txt
         grep -v "^azdev" azure-cli-dev-tools/requirements_temp.txt > azure-cli-dev-tools/requirements_clean.txt || true
