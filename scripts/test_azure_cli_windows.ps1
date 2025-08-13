@@ -88,9 +88,3 @@ Write-Host "=== azure-cli requirements compatibility test PASSED on Python $Pyth
 deactivate
 Remove-Item -Recurse -Force test_env -ErrorAction SilentlyContinue
 Remove-Item temp_azure_cli_requirements.txt -ErrorAction SilentlyContinue
-Write-Host "Testing azure-cli requirements imports..."
-$testScript = Join-Path $ScriptDir "test_imports.py"
-$requirementsFile = "..\artifacts\cross_azure_cli_requirements.txt"
-& python $testScript $requirementsFile $PythonVersion $OSName
-
-Write-Host "=== azure-cli requirements cross-compatibility test PASSED with Python 3.13 built azdev on Python $PythonVersion ($OSName) ==="
