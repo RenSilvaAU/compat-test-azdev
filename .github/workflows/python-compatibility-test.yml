@@ -73,10 +73,10 @@ jobs:
     - name: Prepare requirements file
       shell: bash
       run: |
-        cp aaz-dev-tools/requirements.txt scripts/requirements.txt
-        # Remove azdev line since we're building it from source
-        grep -v "^azdev" scripts/requirements.txt > scripts/requirements_temp.txt || true
-        mv scripts/requirements_temp.txt scripts/requirements.txt
+        # Copy requirements and remove azdev since we're building it from source
+        cp aaz-dev-tools/requirements.txt azure-cli-dev-tools/requirements_temp.txt
+        grep -v "^azdev" azure-cli-dev-tools/requirements_temp.txt > azure-cli-dev-tools/requirements_clean.txt || true
+        cp azure-cli-dev-tools/requirements_clean.txt scripts/requirements.txt
         echo "=== Final requirements file (azdev removed) ==="
         cat scripts/requirements.txt
         
