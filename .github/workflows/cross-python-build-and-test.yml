@@ -28,6 +28,16 @@ on:
         required: true
         default: 'main'
         type: string
+      azure_cli_repo:
+        description: 'Azure CLI repository (owner/repo)'
+        required: true
+        default: 'Azure/azure-cli'
+        type: string
+      azure_cli_branch:
+        description: 'Branch to get azure-cli requirements from'
+        required: true
+        default: 'dev'
+        type: string
 
 jobs:
   build-azdev:
@@ -67,6 +77,12 @@ jobs:
         cd aaz-dev-tools
         git checkout ${{ github.event.inputs.aaz_dev_tools_branch }}
         
+    - name: Clone azure-cli for requirements
+      run: |
+        git clone https://github.com/${{ github.event.inputs.azure_cli_repo }}.git azure-cli
+        cd azure-cli
+        git checkout ${{ github.event.inputs.azure_cli_branch }}
+        
     - name: Build azdev wheel with Python ${{ github.event.inputs.azdev_build_python_version }}
       run: |
         cd azure-cli-dev-tools
@@ -82,10 +98,10 @@ jobs:
         echo "=== Final aaz-dev-tools requirements (azdev removed) ==="
         cat scripts/cross_aaz_requirements.txt
         echo ""
-        echo "=== Preparing azure-cli-dev-tools requirements ==="
-        cat azure-cli-dev-tools/requirements.txt
-        grep -v "^azdev" azure-cli-dev-tools/requirements.txt > scripts/cross_azure_cli_requirements.txt || true
-        echo "=== Final azure-cli-dev-tools requirements (azdev removed) ==="
+        echo "=== Preparing azure-cli requirements ==="
+        cat azure-cli/requirements.txt
+        grep -v "^azdev" azure-cli/requirements.txt > scripts/cross_azure_cli_requirements.txt || true
+        echo "=== Final azure-cli requirements (azdev removed) ==="
         cat scripts/cross_azure_cli_requirements.txt
         
     - name: Upload azdev wheel and requirements as artifacts
@@ -165,6 +181,7 @@ jobs:
     - name: Echo test information
       run: |
         echo "=== Testing azure-cli requirements with Python ${{ github.event.inputs.azdev_build_python_version }} built azdev ==="
+        echo "Azure CLI: ${{ github.event.inputs.azure_cli_repo }} (branch: ${{ github.event.inputs.azure_cli_branch }})"
         echo "Azure CLI Dev Tools: ${{ github.event.inputs.azdev_repo }} (branch: ${{ github.event.inputs.azdev_branch }})"
         echo "Testing on: ${{ matrix.os }} with Python ${{ matrix.python-version }}"
         echo "Using azdev built with Python ${{ github.event.inputs.azdev_build_python_version }}"

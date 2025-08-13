@@ -23,6 +23,16 @@ on:
         required: true
         default: 'main'
         type: string
+      azure_cli_repo:
+        description: 'Azure CLI repository (owner/repo)'
+        required: true
+        default: 'Azure/azure-cli'
+        type: string
+      azure_cli_branch:
+        description: 'Branch to get requirements from azure-cli'
+        required: true
+        default: 'dev'
+        type: string
 
 jobs:
   compat-test:
@@ -41,6 +51,7 @@ jobs:
         echo "=== Repository and Branch Information ==="
         echo "Azure CLI Dev Tools: ${{ github.event.inputs.azdev_repo }} (branch: ${{ github.event.inputs.azdev_branch }})"
         echo "AAZ Dev Tools: ${{ github.event.inputs.aaz_dev_tools_repo }} (branch: ${{ github.event.inputs.aaz_dev_tools_branch }})"
+        echo "Azure CLI: ${{ github.event.inputs.azure_cli_repo }} (branch: ${{ github.event.inputs.azure_cli_branch }})"
         echo "Testing on: ${{ matrix.os }} with Python ${{ matrix.python-version }}"
         echo "============================================"
         
@@ -64,6 +75,12 @@ jobs:
         cd aaz-dev-tools
         git checkout ${{ github.event.inputs.aaz_dev_tools_branch }}
         
+    - name: Clone azure-cli for requirements
+      run: |
+        git clone https://github.com/${{ github.event.inputs.azure_cli_repo }}.git azure-cli
+        cd azure-cli
+        git checkout ${{ github.event.inputs.azure_cli_branch }}
+        
     - name: Build azdev wheel
       run: |
         cd azure-cli-dev-tools
@@ -86,11 +103,11 @@ jobs:
     - name: Prepare azure-cli requirements file
       shell: bash
       run: |
-        echo "=== Original azure-cli-dev-tools requirements file ==="
-        cat azure-cli-dev-tools/requirements.txt
+        echo "=== Original azure-cli requirements file ==="
+        cat azure-cli/requirements.txt
         echo "=== Removing azdev entries ==="
         # Copy requirements and remove azdev since we're building it from source
-        cp azure-cli-dev-tools/requirements.txt azure_cli_requirements_temp.txt
+        cp azure-cli/requirements.txt azure_cli_requirements_temp.txt
         grep -v "^azdev" azure_cli_requirements_temp.txt > azure_cli_requirements_clean.txt || true
         cp azure_cli_requirements_clean.txt azure-cli-dev-tools/azure-cli-requirements.txt
         echo "=== Final azure-cli requirements file (azdev removed) ==="
