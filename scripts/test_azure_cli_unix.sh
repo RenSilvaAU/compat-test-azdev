@@ -10,11 +10,12 @@ echo "Python version: ${PYTHON_VERSION}"
 echo "OS: ${OS_NAME}"
 
 # Create virtual environment
+rm -rf test_env
 python -m venv test_env
 source test_env/bin/activate
 
-# Upgrade pip and install build tools
-python -m pip install --upgrade pip setuptools wheel
+# Upgrade pip and install build tools (with no-cache to avoid caching issues)
+python -m pip install --upgrade --no-cache-dir pip setuptools wheel
 
 # Install azdev wheel (look in all possible locations)
 WHEEL_FILE=""
@@ -41,7 +42,7 @@ if [ -z "$WHEEL_FILE" ]; then
   exit 1
 fi
 echo "Installing azdev wheel: $WHEEL_FILE"
-python -m pip install "$WHEEL_FILE"
+python -m pip install --no-cache-dir "$WHEEL_FILE"
 
 # Install azure-cli requirements (look in all possible locations)
 REQUIREMENTS_FILE=""
@@ -63,7 +64,7 @@ if [ -z "$REQUIREMENTS_FILE" ] || [ ! -f "$REQUIREMENTS_FILE" ]; then
 fi
 
 echo "Installing azure-cli dependencies from: $REQUIREMENTS_FILE"
-python -m pip install --only-binary=:all: -r "$REQUIREMENTS_FILE"
+python -m pip install --no-cache-dir --only-binary=:all: -r "$REQUIREMENTS_FILE"
 
 # Test that azdev CLI works with azure-cli requirements
 echo "Testing azdev CLI commands..."

@@ -13,12 +13,13 @@ Write-Host "Python version: $PythonVersion"
 Write-Host "OS: $OSName"
 
 # Create virtual environment
+Remove-Item -Recurse -Force test_env -ErrorAction SilentlyContinue
 python -m venv test_env
 $PYTHON_EXE = "test_env\Scripts\python.exe"
 $PIP_EXE = "test_env\Scripts\pip.exe"
 
-# Upgrade pip and install build tools
-& $PIP_EXE install --upgrade pip setuptools wheel
+# Upgrade pip and install build tools (with no-cache to avoid caching issues)
+& $PIP_EXE install --upgrade --no-cache-dir pip setuptools wheel
 
 # Install azdev wheel (look in all possible locations)
 $WHEEL_FILE = $null
@@ -45,7 +46,7 @@ if (-not $WHEEL_FILE) {
     exit 1
 }
 Write-Host "Installing azdev wheel: $WHEEL_FILE"
-& $PIP_EXE install $WHEEL_FILE
+& $PIP_EXE install --no-cache-dir $WHEEL_FILE
 
 # Install azure-cli requirements (look in all possible locations)
 $REQUIREMENTS_FILE = $null
@@ -67,7 +68,7 @@ if (-not $REQUIREMENTS_FILE -or -not (Test-Path $REQUIREMENTS_FILE)) {
 }
 
 Write-Host "Installing azure-cli dependencies from: $REQUIREMENTS_FILE"
-& $PIP_EXE install --only-binary=:all: -r $REQUIREMENTS_FILE
+& $PIP_EXE install --no-cache-dir --only-binary=:all: -r $REQUIREMENTS_FILE
 
 # Test that azdev CLI works with azure-cli requirements
 Write-Host "Testing azdev CLI commands..."
