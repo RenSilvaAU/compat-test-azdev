@@ -14,10 +14,11 @@ Write-Host "OS: $OSName"
 
 # Create virtual environment
 python -m venv test_env
-& "test_env\Scripts\Activate.ps1"
+$PYTHON_EXE = "test_env\Scripts\python.exe"
+$PIP_EXE = "test_env\Scripts\pip.exe"
 
 # Upgrade pip and install build tools
-python -m pip install --upgrade pip setuptools wheel
+& $PIP_EXE install --upgrade pip setuptools wheel
 
 # Install azdev wheel (look in all possible locations)
 $WHEEL_FILE = $null
@@ -40,7 +41,7 @@ if (-not $WHEEL_FILE) {
     exit 1
 }
 Write-Host "Installing azdev wheel: $WHEEL_FILE"
-python -m pip install $WHEEL_FILE
+& $PIP_EXE install $WHEEL_FILE
 
 # Install aaz-dev-tools requirements (look in all possible locations)
 $REQUIREMENTS_FILE = $null
@@ -60,32 +61,19 @@ if (-not $REQUIREMENTS_FILE -or -not (Test-Path $REQUIREMENTS_FILE)) {
 }
 
 Write-Host "Installing aaz-dev-tools dependencies from: $REQUIREMENTS_FILE"
-python -m pip install --only-binary=:all: -r $REQUIREMENTS_FILE
+& $PIP_EXE install --only-binary=:all: -r $REQUIREMENTS_FILE
 
 # Test that azdev CLI works with aaz-dev-tools requirements
 Write-Host "Testing azdev CLI commands..."
-python -m azdev --version
-python -m azdev --help | Out-Null
+& $PYTHON_EXE -m azdev --version
+& $PYTHON_EXE -m azdev --help | Out-Null
 
 # Test aaz-dev-tools requirements imports and compatibility
 Write-Host "Testing aaz-dev-tools requirements imports..."
-python "$ScriptDir\test_imports.py" $REQUIREMENTS_FILE $PythonVersion $OSName
+& $PYTHON_EXE "$ScriptDir\test_imports.py" $REQUIREMENTS_FILE $PythonVersion $OSName
 
 Write-Host "=== aaz-dev-tools requirements compatibility test PASSED on Python $PythonVersion ($OSName) ==="
 
 # Cleanup
-deactivate
 Remove-Item -Recurse -Force test_env -ErrorAction SilentlyContinue
 Remove-Item temp_aaz_requirements.txt -ErrorAction SilentlyContinue
-Write-Host "Testing azdev CLI commands..."
-azdev --version
-azdev --help | Out-Null
-
-# Test aaz-dev-tools functionality
-# Test aaz-dev-tools functionality
-Write-Host "Testing aaz-dev-tools with cross-built azdev..."
-$testScript = Join-Path $SCRIPT_DIR "test_imports.py"
-$requirementsFile = "..\artifacts\cross_aaz_requirements.txt"
-& python $testScript $requirementsFile $PYTHON_VERSION $OS_NAME
-
-Write-Host "=== aaz-dev-tools cross-compatibility test PASSED with Python 3.13 built azdev on Python $PythonVersion ($OSName) ==="

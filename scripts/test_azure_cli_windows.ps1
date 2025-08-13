@@ -14,10 +14,11 @@ Write-Host "OS: $OSName"
 
 # Create virtual environment
 python -m venv test_env
-& "test_env\Scripts\Activate.ps1"
+$PYTHON_EXE = "test_env\Scripts\python.exe"
+$PIP_EXE = "test_env\Scripts\pip.exe"
 
 # Upgrade pip and install build tools
-python -m pip install --upgrade pip setuptools wheel
+& $PIP_EXE install --upgrade pip setuptools wheel
 
 # Install azdev wheel (look in all possible locations)
 $WHEEL_FILE = $null
@@ -40,7 +41,7 @@ if (-not $WHEEL_FILE) {
     exit 1
 }
 Write-Host "Installing azdev wheel: $WHEEL_FILE"
-python -m pip install $WHEEL_FILE
+& $PIP_EXE install $WHEEL_FILE
 
 # Install azure-cli requirements (look in all possible locations)
 $REQUIREMENTS_FILE = $null
@@ -60,16 +61,16 @@ if (-not $REQUIREMENTS_FILE -or -not (Test-Path $REQUIREMENTS_FILE)) {
 }
 
 Write-Host "Installing azure-cli dependencies from: $REQUIREMENTS_FILE"
-python -m pip install --only-binary=:all: -r $REQUIREMENTS_FILE
+& $PIP_EXE install --only-binary=:all: -r $REQUIREMENTS_FILE
 
 # Test that azdev CLI works with azure-cli requirements
 Write-Host "Testing azdev CLI commands..."
-python -m azdev --version
-python -m azdev --help | Out-Null
+& $PYTHON_EXE -m azdev --version
+& $PYTHON_EXE -m azdev --help | Out-Null
 
 # Test azure-cli requirements imports and compatibility
 Write-Host "Testing azure-cli requirements imports..."
-python "$ScriptDir\test_imports.py" $REQUIREMENTS_FILE $PythonVersion $OSName
+& $PYTHON_EXE "$ScriptDir\test_imports.py" $REQUIREMENTS_FILE $PythonVersion $OSName
 
 Write-Host "=== azure-cli requirements compatibility test PASSED on Python $PythonVersion ($OSName) ==="
 
