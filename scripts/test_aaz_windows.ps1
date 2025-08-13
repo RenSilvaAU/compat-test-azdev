@@ -24,6 +24,8 @@ $PIP_EXE = "test_env\Scripts\pip.exe"
 $WHEEL_FILE = $null
 if (Test-Path "artifacts\azdev-*.whl") {
     $WHEEL_FILE = Get-ChildItem -Path "artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
+} elseif (Test-Path "artifacts\azure-cli-dev-tools\dist\azdev-*.whl") {
+    $WHEEL_FILE = Get-ChildItem -Path "artifacts\azure-cli-dev-tools\dist\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
 } elseif (Test-Path "..\artifacts\azdev-*.whl") {
     $WHEEL_FILE = Get-ChildItem -Path "..\artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
 } elseif (Test-Path "azure-cli-dev-tools\dist\azdev-*.whl") {
@@ -31,9 +33,11 @@ if (Test-Path "artifacts\azdev-*.whl") {
 }
 
 if (-not $WHEEL_FILE) {
-    Write-Host "Error: No azdev wheel found in artifacts\, ..\artifacts\, or azure-cli-dev-tools\dist\"
+    Write-Host "Error: No azdev wheel found in artifacts\, artifacts\azure-cli-dev-tools\dist\, ..\artifacts\, or azure-cli-dev-tools\dist\"
     Write-Host "Available files in artifacts\:"
     Get-ChildItem -Path "artifacts\" -ErrorAction SilentlyContinue
+    Write-Host "Available files in artifacts\azure-cli-dev-tools\dist\:"
+    Get-ChildItem -Path "artifacts\azure-cli-dev-tools\dist\" -ErrorAction SilentlyContinue
     Write-Host "Available files in ..\artifacts\:"
     Get-ChildItem -Path "..\artifacts\" -ErrorAction SilentlyContinue
     Write-Host "Available files in azure-cli-dev-tools\dist\:"
@@ -47,6 +51,8 @@ Write-Host "Installing azdev wheel: $WHEEL_FILE"
 $REQUIREMENTS_FILE = $null
 if (Test-Path "artifacts\cross_aaz_requirements.txt") {
     $REQUIREMENTS_FILE = "artifacts\cross_aaz_requirements.txt"
+} elseif (Test-Path "artifacts\scripts\cross_aaz_requirements.txt") {
+    $REQUIREMENTS_FILE = "artifacts\scripts\cross_aaz_requirements.txt"
 } elseif (Test-Path "..\artifacts\cross_aaz_requirements.txt") {
     $REQUIREMENTS_FILE = "..\artifacts\cross_aaz_requirements.txt"
 } elseif (Test-Path "aaz-dev-tools\requirements.txt") {

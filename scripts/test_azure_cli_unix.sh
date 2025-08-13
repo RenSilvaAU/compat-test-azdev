@@ -20,6 +20,8 @@ python -m pip install --upgrade pip setuptools wheel
 WHEEL_FILE=""
 if [ -f "artifacts/azdev-"*.whl ]; then
     WHEEL_FILE=$(find artifacts/ -name "azdev-*.whl" | head -n1)
+elif [ -f "artifacts/azure-cli-dev-tools/dist/azdev-"*.whl ]; then
+    WHEEL_FILE=$(find artifacts/azure-cli-dev-tools/dist/ -name "azdev-*.whl" | head -n1)
 elif [ -f "../artifacts/azdev-"*.whl ]; then
     WHEEL_FILE=$(find ../artifacts/ -name "azdev-*.whl" | head -n1)
 elif [ -f "azure-cli-dev-tools/dist/azdev-"*.whl ]; then
@@ -27,9 +29,11 @@ elif [ -f "azure-cli-dev-tools/dist/azdev-"*.whl ]; then
 fi
 
 if [ -z "$WHEEL_FILE" ]; then
-  echo "Error: No azdev wheel found in artifacts/, ../artifacts/, or azure-cli-dev-tools/dist/"
+  echo "Error: No azdev wheel found in artifacts/, artifacts/azure-cli-dev-tools/dist/, ../artifacts/, or azure-cli-dev-tools/dist/"
   echo "Available files in artifacts/:"
   ls -la artifacts/ 2>/dev/null || echo "artifacts/ directory not found"
+  echo "Available files in artifacts/azure-cli-dev-tools/dist/:"
+  ls -la artifacts/azure-cli-dev-tools/dist/ 2>/dev/null || echo "artifacts/azure-cli-dev-tools/dist/ directory not found"
   echo "Available files in ../artifacts/:"
   ls -la ../artifacts/ 2>/dev/null || echo "../artifacts/ directory not found"
   echo "Available files in azure-cli-dev-tools/dist/:"
@@ -43,6 +47,8 @@ python -m pip install "$WHEEL_FILE"
 REQUIREMENTS_FILE=""
 if [ -f "artifacts/cross_azure_cli_requirements.txt" ]; then
     REQUIREMENTS_FILE="artifacts/cross_azure_cli_requirements.txt"
+elif [ -f "artifacts/scripts/cross_azure_cli_requirements.txt" ]; then
+    REQUIREMENTS_FILE="artifacts/scripts/cross_azure_cli_requirements.txt"
 elif [ -f "../artifacts/cross_azure_cli_requirements.txt" ]; then
     REQUIREMENTS_FILE="../artifacts/cross_azure_cli_requirements.txt"
 elif [ -f "azure-cli/requirements.txt" ]; then
