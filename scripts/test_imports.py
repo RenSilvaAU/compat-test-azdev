@@ -29,14 +29,19 @@ def test_aaz_dev_tools_dependencies():
     """Test that aaz-dev-tools dependencies are compatible"""
     dependencies = [
         'schematics',
-        'yaml', 
+        'yaml',  # pyyaml
+        'fuzzywuzzy',
+        'pluralizer', 
+        'lxml',
         'flask',
+        'cachelib',
+        'xmltodict',
+        'packaging',
         'jinja2',
         'jsonschema',
-        'packaging',
         'click',
         'setuptools',
-        'wrapt'
+        'azure.mgmt.core'  # azure-mgmt-core
     ]
     
     failed_imports = []
@@ -45,6 +50,8 @@ def test_aaz_dev_tools_dependencies():
         try:
             if dep == 'yaml':
                 import yaml
+            elif dep == 'azure.mgmt.core':
+                import azure.mgmt.core
             else:
                 __import__(dep)
             print(f"✓ {dep} imported successfully")
