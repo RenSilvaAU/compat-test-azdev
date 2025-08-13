@@ -1,4 +1,4 @@
-name: Python Compatibility Test
+name: Same Python Build and Test
 
 on:
   workflow_dispatch:
@@ -83,6 +83,19 @@ jobs:
         echo "=== Final requirements file (azdev removed) ==="
         cat scripts/requirements.txt
         
+    - name: Prepare azure-cli requirements file
+      shell: bash
+      run: |
+        echo "=== Original azure-cli-dev-tools requirements file ==="
+        cat azure-cli-dev-tools/requirements.txt
+        echo "=== Removing azdev entries ==="
+        # Copy requirements and remove azdev since we're building it from source
+        cp azure-cli-dev-tools/requirements.txt azure_cli_requirements_temp.txt
+        grep -v "^azdev" azure_cli_requirements_temp.txt > azure_cli_requirements_clean.txt || true
+        cp azure_cli_requirements_clean.txt azure-cli-dev-tools/azure-cli-requirements.txt
+        echo "=== Final azure-cli requirements file (azdev removed) ==="
+        cat azure-cli-dev-tools/azure-cli-requirements.txt
+        
     - name: Run compatibility test (Unix)
       if: runner.os != 'Windows'
       run: |
@@ -90,12 +103,26 @@ jobs:
         cd azure-cli-dev-tools
         ../scripts/test_compatibility_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
         
+    - name: Run azure-cli requirements test (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        chmod +x scripts/same_test_azure_cli_unix.sh
+        cd azure-cli-dev-tools
+        ../scripts/same_test_azure_cli_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
+        
     - name: Run compatibility test (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
         cd azure-cli-dev-tools
         ..\scripts\test_compatibility_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
+        
+    - name: Run azure-cli requirements test (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        cd azure-cli-dev-tools
+        ..\scripts\same_test_azure_cli_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
         
     - name: Upload test results
       if: always()
