@@ -35,7 +35,7 @@ python -m pip install --only-binary=:all: -r "$ScriptDir\requirements.txt"
 
 # Test azdev can be imported and basic functionality works
 Write-Host "Testing azdev import and basic functionality..."
-python "$ScriptDir\test_imports.py"
+python "$ScriptDir\test_imports.py" "$ScriptDir\requirements.txt" $PythonVersion $OSName
 
 # Test azdev CLI commands
 Write-Host "Testing azdev CLI basic commands..."
