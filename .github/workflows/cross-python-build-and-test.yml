@@ -86,7 +86,7 @@ jobs:
     - name: Build azdev wheel with Python ${{ github.event.inputs.azdev_build_python_version }}
       run: |
         cd azure-cli-dev-tools
-        python -m pip install --upgrade pip setuptools wheel build
+        python -m pip install --upgrade --no-cache-dir pip setuptools wheel build
         python -m build --wheel
         
     - name: Prepare requirements files
@@ -107,7 +107,7 @@ jobs:
     - name: Upload azdev wheel and requirements as artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: cross-test-artifacts-${{ matrix.os }}-py${{ github.event.inputs.azdev_build_python_version }}
+        name: cross-test-artifacts-${{ matrix.os }}-py${{ github.event.inputs.azdev_build_python_version }}-${{ github.run_number }}
         path: |
           azure-cli-dev-tools/dist/*.whl
           scripts/cross_aaz_requirements.txt
@@ -145,7 +145,7 @@ jobs:
     - name: Download cross-test artifacts
       uses: actions/download-artifact@v4
       with:
-        name: cross-test-artifacts-${{ matrix.os }}-py${{ github.event.inputs.azdev_build_python_version }}
+        name: cross-test-artifacts-${{ matrix.os }}-py${{ github.event.inputs.azdev_build_python_version }}-${{ github.run_number }}
         path: artifacts/
         
     - name: Clone aaz-dev-tools
@@ -153,6 +153,16 @@ jobs:
         git clone https://github.com/${{ github.event.inputs.aaz_dev_tools_repo }}.git aaz-dev-tools
         cd aaz-dev-tools
         git checkout ${{ github.event.inputs.aaz_dev_tools_branch }}
+        
+    - name: Clean Windows environment (Windows only)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        # Force cleanup of any existing test environments
+        Remove-Item -Recurse -Force test_env -ErrorAction SilentlyContinue
+        Get-ChildItem -Path . -Filter "test_env*" -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        # Clear pip cache
+        python -m pip cache purge -ErrorAction SilentlyContinue
         
     - name: Test aaz-dev-tools with cross-built azdev (Unix)
       if: runner.os != 'Windows'
@@ -198,8 +208,18 @@ jobs:
     - name: Download cross-test artifacts
       uses: actions/download-artifact@v4
       with:
-        name: cross-test-artifacts-${{ matrix.os }}-py${{ github.event.inputs.azdev_build_python_version }}
+        name: cross-test-artifacts-${{ matrix.os }}-py${{ github.event.inputs.azdev_build_python_version }}-${{ github.run_number }}
         path: artifacts/
+        
+    - name: Clean Windows environment (Windows only)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        # Force cleanup of any existing test environments
+        Remove-Item -Recurse -Force test_env -ErrorAction SilentlyContinue
+        Get-ChildItem -Path . -Filter "test_env*" -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        # Clear pip cache
+        python -m pip cache purge -ErrorAction SilentlyContinue
         
     - name: Test azure-cli requirements with cross-built azdev (Unix)
       if: runner.os != 'Windows'
