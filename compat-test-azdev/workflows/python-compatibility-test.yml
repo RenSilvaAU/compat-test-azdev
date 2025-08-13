@@ -1,0 +1,91 @@
+name: Python Compatibility Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      azdev_repo:
+        description: 'Azure CLI Dev Tools repository (owner/repo)'
+        required: true
+        default: 'Azure/azure-cli-dev-tools'
+        type: string
+      azdev_branch:
+        description: 'Branch to test from azure-cli-dev-tools'
+        required: true
+        default: 'dev'
+        type: string
+      aaz_dev_tools_repo:
+        description: 'AAZ Dev Tools repository (owner/repo)'
+        required: true
+        default: 'Azure/aaz-dev-tools'
+        type: string
+      aaz_dev_tools_branch:
+        description: 'Branch to get requirements from aaz-dev-tools'
+        required: true
+        default: 'main'
+        type: string
+
+jobs:
+  compatibility-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout compatibility test repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Clone azure-cli-dev-tools
+      run: |
+        git clone https://github.com/${{ github.event.inputs.azdev_repo }}.git azure-cli-dev-tools
+        cd azure-cli-dev-tools
+        git checkout ${{ github.event.inputs.azdev_branch }}
+        
+    - name: Clone aaz-dev-tools for requirements
+      run: |
+        git clone https://github.com/${{ github.event.inputs.aaz_dev_tools_repo }}.git aaz-dev-tools
+        cd aaz-dev-tools
+        git checkout ${{ github.event.inputs.aaz_dev_tools_branch }}
+        
+    - name: Build azdev wheel
+      run: |
+        cd azure-cli-dev-tools
+        python -m pip install --upgrade pip setuptools wheel build
+        python -m build --wheel
+        
+    - name: Prepare requirements file
+      shell: bash
+      run: |
+        cp aaz-dev-tools/requirements.txt scripts/requirements.txt
+        
+    - name: Run compatibility test (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        chmod +x scripts/test_compatibility_unix.sh
+        cd azure-cli-dev-tools
+        ../scripts/test_compatibility_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
+        
+    - name: Run compatibility test (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        cd azure-cli-dev-tools
+        ..\scripts\test_compatibility_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
+        
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.os }}-python${{ matrix.python-version }}
+        path: |
+          azure-cli-dev-tools/test_env/
+          azure-cli-dev-tools/dist/
+        retention-days: 5
