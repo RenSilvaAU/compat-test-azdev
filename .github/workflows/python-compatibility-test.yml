@@ -25,7 +25,8 @@ on:
         type: string
 
 jobs:
-  compatibility-test:
+  compat-test:
+    name: "Python ${{ matrix.python-version }} on ${{ matrix.os }} (azdev:${{ github.event.inputs.azdev_branch }}, aaz:${{ github.event.inputs.aaz_dev_tools_branch }})"
     strategy:
       fail-fast: false
       matrix:
@@ -35,6 +36,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     steps:
+    - name: Echo repository and branch information
+      run: |
+        echo "=== Repository and Branch Information ==="
+        echo "Azure CLI Dev Tools: ${{ github.event.inputs.azdev_repo }} (branch: ${{ github.event.inputs.azdev_branch }})"
+        echo "AAZ Dev Tools: ${{ github.event.inputs.aaz_dev_tools_repo }} (branch: ${{ github.event.inputs.aaz_dev_tools_branch }})"
+        echo "Testing on: ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+        echo "============================================"
+        
     - name: Checkout compatibility test repository
       uses: actions/checkout@v4
       
