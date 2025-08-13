@@ -15,22 +15,25 @@ Write-Host "OS: $OSName"
 # Create virtual environment
 Remove-Item -Recurse -Force test_env -ErrorAction SilentlyContinue
 python -m venv test_env
-$PYTHON_EXE = "test_env\Scripts\python.exe"
-$PIP_EXE = "test_env\Scripts\pip.exe"
+test_env\Scripts\Activate.ps1
 
-# Upgrade pip and install build tools (with no-cache to avoid caching issues)
-& $PIP_EXE install --upgrade --no-cache-dir pip setuptools wheel
+# Upgrade pip and install build tools
+python -m pip install --upgrade pip setuptools wheel
 
 # Install azdev wheel (look in all possible locations)
 $WHEEL_FILE = $null
 if (Test-Path "artifacts\azdev-*.whl") {
-    $WHEEL_FILE = Get-ChildItem -Path "artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
+    $WHEEL_FILE = Get-ChildItem -Path "artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty Name
+    $WHEEL_PATH = "artifacts\$WHEEL_FILE"
 } elseif (Test-Path "artifacts\azure-cli-dev-tools\dist\azdev-*.whl") {
-    $WHEEL_FILE = Get-ChildItem -Path "artifacts\azure-cli-dev-tools\dist\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
+    $WHEEL_FILE = Get-ChildItem -Path "artifacts\azure-cli-dev-tools\dist\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty Name
+    $WHEEL_PATH = "artifacts\azure-cli-dev-tools\dist\$WHEEL_FILE"
 } elseif (Test-Path "..\artifacts\azdev-*.whl") {
-    $WHEEL_FILE = Get-ChildItem -Path "..\artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
+    $WHEEL_FILE = Get-ChildItem -Path "..\artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty Name
+    $WHEEL_PATH = "..\artifacts\$WHEEL_FILE"
 } elseif (Test-Path "azure-cli-dev-tools\dist\azdev-*.whl") {
-    $WHEEL_FILE = Get-ChildItem -Path "azure-cli-dev-tools\dist\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
+    $WHEEL_FILE = Get-ChildItem -Path "azure-cli-dev-tools\dist\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty Name
+    $WHEEL_PATH = "azure-cli-dev-tools\dist\$WHEEL_FILE"
 }
 
 if (-not $WHEEL_FILE) {
@@ -45,8 +48,8 @@ if (-not $WHEEL_FILE) {
     Get-ChildItem -Path "azure-cli-dev-tools\dist\" -ErrorAction SilentlyContinue
     exit 1
 }
-Write-Host "Installing azdev wheel: $WHEEL_FILE"
-& $PIP_EXE install --no-cache-dir $WHEEL_FILE
+Write-Host "Installing azdev wheel: $WHEEL_PATH"
+python -m pip install $WHEEL_PATH
 
 # Install azure-cli requirements (look in all possible locations)
 $REQUIREMENTS_FILE = $null
@@ -68,16 +71,16 @@ if (-not $REQUIREMENTS_FILE -or -not (Test-Path $REQUIREMENTS_FILE)) {
 }
 
 Write-Host "Installing azure-cli dependencies from: $REQUIREMENTS_FILE"
-& $PIP_EXE install --no-cache-dir --only-binary=:all: -r $REQUIREMENTS_FILE
+python -m pip install --only-binary=:all: -r $REQUIREMENTS_FILE
 
 # Test that azdev CLI works with azure-cli requirements
 Write-Host "Testing azdev CLI commands..."
-& $PYTHON_EXE -m azdev --version
-& $PYTHON_EXE -m azdev --help | Out-Null
+python -m azdev --version
+python -m azdev --help | Out-Null
 
 # Test azure-cli requirements imports and compatibility
 Write-Host "Testing azure-cli requirements imports..."
-& $PYTHON_EXE "$ScriptDir\test_imports.py" $REQUIREMENTS_FILE $PythonVersion $OSName
+python "$ScriptDir\test_imports.py" $REQUIREMENTS_FILE $PythonVersion $OSName
 
 Write-Host "=== azure-cli requirements compatibility test PASSED on Python $PythonVersion ($OSName) ==="
 
