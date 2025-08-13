@@ -55,8 +55,8 @@ python -m pip install --only-binary=:all: -r "$REQUIREMENTS_FILE"
 
 # Test that azdev CLI works with azure-cli requirements
 echo "Testing azdev CLI commands..."
-azdev --version
-azdev --help > /dev/null
+python -m azdev --version
+python -m azdev --help > /dev/null
 
 # Test azure-cli requirements imports and compatibility
 echo "Testing azure-cli requirements imports..."

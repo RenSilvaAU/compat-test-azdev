@@ -58,8 +58,8 @@ python -m pip install --only-binary=:all: -r $REQUIREMENTS_FILE
 
 # Test that azdev CLI works with aaz-dev-tools requirements
 Write-Host "Testing azdev CLI commands..."
-azdev --version
-azdev --help | Out-Null
+python -m azdev --version
+python -m azdev --help | Out-Null
 
 # Test aaz-dev-tools requirements imports and compatibility
 Write-Host "Testing aaz-dev-tools requirements imports..."

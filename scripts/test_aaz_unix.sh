@@ -61,10 +61,10 @@ if [ -d "aaz-dev-tools" ]; then
     cd ..
 fi
 
-# Test that azdev CLI works
+# Test that azdev CLI works with aaz-dev-tools requirements
 echo "Testing azdev CLI commands..."
-azdev --version
-azdev --help > /dev/null
+python -m azdev --version
+python -m azdev --help > /dev/null
 
 # Test aaz-dev-tools functionality
 echo "Testing aaz-dev-tools imports..."
