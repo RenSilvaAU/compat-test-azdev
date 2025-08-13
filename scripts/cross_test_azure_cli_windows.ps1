@@ -1,5 +1,12 @@
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter($WHEEL_FILE = Get-ChildItem -Path "..\artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty Name
+if (-not $WHEEL_FILE) {
+    Write-Host "Error: No azdev wheel found in ..\artifacts\"
+    Write-Host "Available files in ..\artifacts\:"
+    Get-ChildItem -Path "..\artifacts\" -ErrorAction SilentlyContinue
+    exit 1
+}
+$WHEEL_PATH = "..\artifacts\$WHEEL_FILE"y=$true)]
     [string]$PythonVersion,
     
     [Parameter(Mandatory=$true)]
@@ -33,7 +40,7 @@ python -m pip install $WHEEL_PATH
 
 # Install azure-cli requirements (excluding azdev itself)
 Write-Host "Installing azure-cli requirements..."
-python -m pip install --only-binary=:all: -r "artifacts\cross_azure_cli_requirements.txt"
+python -m pip install --only-binary=:all: -r "..\artifacts\cross_azure_cli_requirements.txt"
 
 # Test that azdev CLI works with azure-cli requirements
 Write-Host "Testing azdev CLI commands..."
@@ -43,7 +50,7 @@ azdev --help | Out-Null
 # Test azure-cli requirements imports and compatibility
 Write-Host "Testing azure-cli requirements imports..."
 $testScript = Join-Path $ScriptDir "test_imports.py"
-$requirementsFile = Join-Path $ScriptDir "..\artifacts\cross_azure_cli_requirements.txt"
+$requirementsFile = "..\artifacts\cross_azure_cli_requirements.txt"
 & python $testScript $requirementsFile $PythonVersion $OSName
 
 Write-Host "=== azure-cli requirements cross-compatibility test PASSED with Python 3.13 built azdev on Python $PythonVersion ($OSName) ==="

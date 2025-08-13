@@ -6,32 +6,32 @@ on:
       azdev_repo:
         description: 'Azure CLI Dev Tools repository (owner/repo)'
         required: true
-        default: 'Azure/azure-cli-dev-tools'
+        default: 'RenSilvaAU/azure-cli-dev-tools'
         type: string
       azdev_branch:
         description: 'Branch to test from azure-cli-dev-tools'
         required: true
-        default: 'dev'
+        default: 'resilv/py313azdev'
         type: string
       aaz_dev_tools_repo:
         description: 'AAZ Dev Tools repository (owner/repo)'
         required: true
-        default: 'Azure/aaz-dev-tools'
+        default: 'RenSilvaAU/aaz-dev-tools'
         type: string
       aaz_dev_tools_branch:
         description: 'Branch to get requirements from aaz-dev-tools'
         required: true
-        default: 'main'
+        default: 'resilv/py313'
         type: string
       azure_cli_repo:
         description: 'Azure CLI repository (owner/repo)'
         required: true
-        default: 'Azure/azure-cli'
+        default: 'RenSilvaAU/azure-cli'
         type: string
       azure_cli_branch:
         description: 'Branch to get requirements from azure-cli'
         required: true
-        default: 'dev'
+        default: 'resilv/py313cli'
         type: string
 
 jobs:

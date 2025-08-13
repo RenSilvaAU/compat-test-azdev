@@ -1,5 +1,12 @@
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter($WHEEL_FILE = Get-ChildItem -Path "..\artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty Name
+if (-not $WHEEL_FILE) {
+    Write-Host "Error: No azdev wheel found in ..\artifacts\"
+    Write-Host "Available files in ..\artifacts\:"
+    Get-ChildItem -Path "..\artifacts\" -ErrorAction SilentlyContinue
+    exit 1
+}
+$WHEEL_PATH = "..\artifacts\$WHEEL_FILE"y=$true)]
     [string]$PythonVersion,
     
     [Parameter(Mandatory=$true)]
@@ -33,7 +40,7 @@ python -m pip install $WHEEL_PATH
 
 # Install aaz-dev-tools requirements (excluding azdev)
 Write-Host "Installing aaz-dev-tools dependencies..."
-python -m pip install --only-binary=:all: -r "artifacts\cross_aaz_requirements.txt"
+python -m pip install --only-binary=:all: -r "..\artifacts\cross_aaz_requirements.txt"
 
 # Clone and setup aaz-dev-tools
 Write-Host "Setting up aaz-dev-tools..."
@@ -49,7 +56,7 @@ azdev --help | Out-Null
 # Test aaz-dev-tools functionality
 Write-Host "Testing aaz-dev-tools with cross-built azdev..."
 $testScript = Join-Path $SCRIPT_DIR "test_imports.py"
-$requirementsFile = Join-Path $SCRIPT_DIR "..\artifacts\cross_aaz_requirements.txt"
+$requirementsFile = "..\artifacts\cross_aaz_requirements.txt"
 & python $testScript $requirementsFile $PYTHON_VERSION $OS_NAME
 
 Write-Host "=== aaz-dev-tools cross-compatibility test PASSED with Python 3.13 built azdev on Python $PythonVersion ($OSName) ==="

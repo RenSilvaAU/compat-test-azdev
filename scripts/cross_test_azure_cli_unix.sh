@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
 
-PYTHON_VERSION="$1"
+PYTHON_VE# Install azure-cli requirements (excluding azdev itself)
+echo "Installing azure-cli requirements..."
+python -m pip install --only-binary=:all: -r "../artifacts/cross_azure_cli_requirements.txt"ON="$1"
 OS_NAME="$2"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -17,11 +19,11 @@ source test_env/bin/activate
 python -m pip install --upgrade pip setuptools wheel
 
 # Install azdev wheel built with Python 3.13 first
-WHEEL_FILE=$(find artifacts/ -name "azdev-*.whl" | head -n1)
+WHEEL_FILE=$(find ../artifacts/ -name "azdev-*.whl" | head -n1)
 if [ -z "$WHEEL_FILE" ]; then
-  echo "Error: No azdev wheel found in artifacts/"
-  echo "Available files in artifacts/:"
-  ls -la artifacts/ || echo "artifacts/ directory not found"
+  echo "Error: No azdev wheel found in ../artifacts/"
+  echo "Available files in ../artifacts/:"
+  ls -la ../artifacts/ || echo "../artifacts/ directory not found"
   exit 1
 fi
 echo "Installing Python 3.13 built azdev wheel: $WHEEL_FILE"
@@ -40,6 +42,6 @@ azdev --help > /dev/null
 echo "Testing azure-cli requirements imports..."
 # Test azure-cli functionality
 echo "Testing azure-cli with cross-built azdev..."
-python "${SCRIPT_DIR}/test_imports.py" "${SCRIPT_DIR}/../artifacts/cross_azure_cli_requirements.txt" "${PYTHON_VERSION}" "${OS_NAME}"
+python "${SCRIPT_DIR}/test_imports.py" "../artifacts/cross_azure_cli_requirements.txt" "${PYTHON_VERSION}" "${OS_NAME}"
 
 echo "=== azure-cli requirements cross-compatibility test PASSED with Python 3.13 built azdev on Python ${PYTHON_VERSION} (${OS_NAME}) ==="

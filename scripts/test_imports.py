@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Universal import testing script for Python package compatibility.
-Tests imports based on requirements file and package type detection.
+Tests imports based on packages listed in requirements file.
 """
 
 import sys
@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 def parse_requirements(requirements_file):
-    """Parse requirements file and extract package names."""
+    """Parse requirements file and extract package names with their import names."""
     packages = []
     
     if not Path(requirements_file).exists():
@@ -22,101 +22,133 @@ def parse_requirements(requirements_file):
     with open(requirements_file, 'r') as f:
         for line in f:
             line = line.strip()
-            # Skip empty lines and comments
-            if not line or line.startswith('#'):
+            # Skip empty lines, comments, and git/url requirements
+            if not line or line.startswith('#') or line.startswith('git+') or line.startswith('http'):
                 continue
             
-            # Extract package name (everything before version specifiers)
-            # Handle cases like: package>=1.0, package==1.0, package[extra]>=1.0
-            match = re.match(r'^([a-zA-Z0-9_.-]+)', line)
+            # Skip editable installs and other special formats
+            if line.startswith('-e') or line.startswith('--'):
+                continue
+            
+            # Extract package name (everything before version specifiers, extras, etc.)
+            # Handle cases like: package>=1.0, package==1.0, package[extra]>=1.0, package @ url
+            match = re.match(r'^([a-zA-Z0-9_.-]+)', line.split()[0])
             if match:
                 package_name = match.group(1)
-                # Convert underscores to hyphens for package names
-                package_name = package_name.replace('_', '-')
                 packages.append(package_name)
     
     return packages
 
 
-def detect_package_type(requirements_file):
-    """Detect whether this is aaz-dev-tools or azure-cli based on requirements."""
-    packages = parse_requirements(requirements_file)
+def get_import_name(package_name):
+    """Convert package name to likely import name."""
+    # Common package name to import name mappings
+    name_mappings = {
+        'pyyaml': 'yaml',
+        'pillow': 'PIL',
+        'beautifulsoup4': 'bs4',
+        'python-dateutil': 'dateutil',
+        'msgpack-python': 'msgpack',
+        'pycrypto': 'Crypto',
+        'pycryptodome': 'Crypto',
+        'python-levenshtein': 'Levenshtein',
+        'azure-cli-core': 'azure.cli.core',
+        'azure-mgmt-core': 'azure.mgmt.core',
+        'azure-mgmt-resource': 'azure.mgmt.resource',
+        'azure-mgmt-storage': 'azure.mgmt.storage',
+        'azure-mgmt-compute': 'azure.mgmt.compute',
+        'azure-mgmt-network': 'azure.mgmt.network',
+        'azure-storage-blob': 'azure.storage.blob',
+        'azure-keyvault-secrets': 'azure.keyvault.secrets',
+        'azure-identity': 'azure.identity',
+        'azure-common': 'azure.common',
+        'azure-core': 'azure.core',
+        'msrestazure': 'msrestazure',
+        'msrest': 'msrest',
+        'azure-cli-command-modules': 'azure.cli.command_modules',
+        'swagger-to-sdk': 'swagger_to_sdk',
+        'jinja2': 'jinja2',
+        'markupsafe': 'markupsafe',
+        'jsonschema': 'jsonschema',
+        'fuzzywuzzy': 'fuzzywuzzy',
+        'pluralizer': 'pluralizer',
+        'xmltodict': 'xmltodict',
+        'cachelib': 'cachelib',
+    }
     
-    # Check for distinctive packages
-    aaz_indicators = ['swagger-to-sdk', 'pyyaml', 'jinja2']
-    cli_indicators = ['azure-cli-core', 'azure-mgmt-resource', 'knack', 'msrestazure']
+    # Check if we have a specific mapping
+    package_lower = package_name.lower()
+    if package_lower in name_mappings:
+        return name_mappings[package_lower]
     
-    aaz_count = sum(1 for pkg in packages if any(indicator in pkg.lower() for indicator in aaz_indicators))
-    cli_count = sum(1 for pkg in packages if any(indicator in pkg.lower() for indicator in cli_indicators))
+    # For azure packages, try to construct the import path
+    if package_name.startswith('azure-'):
+        parts = package_name.split('-')
+        if len(parts) >= 2:
+            return 'azure.' + '.'.join(parts[1:])
     
-    if cli_count > aaz_count:
-        return 'azure-cli'
-    else:
-        return 'aaz-dev-tools'
+    # Default: replace hyphens with underscores
+    return package_name.replace('-', '_')
 
 
-def get_test_modules(package_type):
-    """Get list of modules to test based on package type."""
-    
-    if package_type == 'azure-cli':
-        return [
-            'azure.cli.core',
-            'azure.cli.command_modules',
-            'azure.mgmt.resource',
-            'azure.mgmt.storage', 
-            'azure.mgmt.compute',
-            'azure.mgmt.network',
-            'azure.identity',
-            'azure.storage.blob',
-            'azure.keyvault.secrets',
-            'msrestazure',
-            'knack'
-        ]
-    else:  # aaz-dev-tools
-        return [
-            'swagger_to_sdk',
-            'yaml',
-            'jinja2',
-            'jsonschema',
-            'requests',
-            'click',
-            'packaging',
-            'setuptools',
-            'wheel'
-        ]
-
-
-def test_basic_functionality(package_type):
-    """Test basic functionality based on package type."""
-    
+def test_package_import(package_name, import_name):
+    """Test importing a single package."""
     try:
-        if package_type == 'azure-cli':
-            from azure.cli.core import get_default_cli
-            cli = get_default_cli()
-            print('[OK] Azure CLI core functionality accessible')
-            return True
-        else:  # aaz-dev-tools
-            # Test some basic aaz-dev-tools functionality
+        importlib.import_module(import_name)
+        return True, None
+    except ImportError as e:
+        return False, str(e)
+    except Exception as e:
+        return False, f"Unexpected error: {str(e)}"
+
+
+def test_basic_functionality(packages):
+    """Test basic functionality of commonly used packages."""
+    functionality_tests = []
+    
+    # Test YAML if available
+    if any('yaml' in pkg.lower() for pkg in packages):
+        try:
             import yaml
-            import jinja2
-            
-            # Test YAML processing
             test_data = {'test': 'value'}
             yaml_str = yaml.dump(test_data)
             parsed = yaml.safe_load(yaml_str)
             assert parsed == test_data
-            
-            # Test Jinja2 templating
+            functionality_tests.append(('YAML processing', True, None))
+        except Exception as e:
+            functionality_tests.append(('YAML processing', False, str(e)))
+    
+    # Test Jinja2 if available
+    if any('jinja2' in pkg.lower() for pkg in packages):
+        try:
+            import jinja2
             template = jinja2.Template('Hello {{ name }}!')
             result = template.render(name='World')
             assert result == 'Hello World!'
-            
-            print('[OK] AAZ dev tools core functionality accessible')
-            return True
-            
-    except Exception as e:
-        print(f'[WARN] Basic functionality test failed: {e}')
-        return False
+            functionality_tests.append(('Jinja2 templating', True, None))
+        except Exception as e:
+            functionality_tests.append(('Jinja2 templating', False, str(e)))
+    
+    # Test Azure CLI core if available
+    if any('azure-cli-core' in pkg.lower() for pkg in packages):
+        try:
+            from azure.cli.core import get_default_cli
+            cli = get_default_cli()
+            functionality_tests.append(('Azure CLI core', True, None))
+        except Exception as e:
+            functionality_tests.append(('Azure CLI core', False, str(e)))
+    
+    # Test JSON schema if available
+    if any('jsonschema' in pkg.lower() for pkg in packages):
+        try:
+            import jsonschema
+            schema = {"type": "object", "properties": {"name": {"type": "string"}}}
+            jsonschema.validate({"name": "test"}, schema)
+            functionality_tests.append(('JSON Schema validation', True, None))
+        except Exception as e:
+            functionality_tests.append(('JSON Schema validation', False, str(e)))
+    
+    return functionality_tests
 
 
 def test_imports(requirements_file, python_version, os_name):
@@ -125,51 +157,76 @@ def test_imports(requirements_file, python_version, os_name):
     print(f"Testing imports from {requirements_file} on {os_name} with Python {python_version}")
     print("=" * 60)
     
-    # Detect package type
-    package_type = detect_package_type(requirements_file)
-    print(f"Detected package type: {package_type}")
+    # Parse requirements file
+    packages = parse_requirements(requirements_file)
+    if not packages:
+        print("[FAIL] No packages found in requirements file")
+        return False
     
-    # Get modules to test
-    modules_to_test = get_test_modules(package_type)
+    print(f"Found {len(packages)} packages to test:")
+    for pkg in packages:
+        print(f"  - {pkg}")
+    print()
     
     failed_imports = []
     successful_imports = []
+    skipped_imports = []
     
-    print(f"\nTesting {len(modules_to_test)} key modules...")
+    print("Testing package imports...")
     
-    for module in modules_to_test:
-        try:
-            importlib.import_module(module)
-            successful_imports.append(module)
-            print(f'[OK] {module}')
-        except ImportError as e:
-            failed_imports.append((module, str(e)))
-            print(f'[FAIL] {module}: {e}')
-        except Exception as e:
-            failed_imports.append((module, str(e)))
-            print(f'[ERROR] {module}: {e}')
+    for package_name in packages:
+        # Skip packages that are typically not importable directly
+        skip_packages = ['azdev', 'setuptools', 'pip', 'wheel', 'build']
+        if package_name.lower() in skip_packages:
+            skipped_imports.append(package_name)
+            print(f'[SKIP] {package_name} (build/dev tool)')
+            continue
+        
+        import_name = get_import_name(package_name)
+        success, error = test_package_import(package_name, import_name)
+        
+        if success:
+            successful_imports.append((package_name, import_name))
+            print(f'[OK] {package_name} -> {import_name}')
+        else:
+            failed_imports.append((package_name, import_name, error))
+            print(f'[FAIL] {package_name} -> {import_name}: {error}')
     
     print(f'\nSummary for Python {sys.version}:')
-    print(f'  Package type: {package_type}')
+    print(f'  Total packages: {len(packages)}')
     print(f'  Successful imports: {len(successful_imports)}')
     print(f'  Failed imports: {len(failed_imports)}')
+    print(f'  Skipped imports: {len(skipped_imports)}')
     
     if failed_imports:
         print('\nFailed imports:')
-        for module, error in failed_imports:
-            print(f'  - {module}: {error}')
+        for package_name, import_name, error in failed_imports:
+            print(f'  - {package_name} ({import_name}): {error}')
+    
+    if skipped_imports:
+        print('\nSkipped packages:')
+        for package_name in skipped_imports:
+            print(f'  - {package_name}')
     
     # Test basic functionality
     print('\nTesting basic functionality...')
-    functionality_ok = test_basic_functionality(package_type)
+    functionality_tests = test_basic_functionality(packages)
+    
+    for test_name, success, error in functionality_tests:
+        if success:
+            print(f'[OK] {test_name}')
+        else:
+            print(f'[FAIL] {test_name}: {error}')
     
     # Final result
-    if failed_imports:
-        print(f'\n[FAIL] {len(failed_imports)} module(s) failed to import')
-        return False
-    else:
-        print(f'\n[OK] All {package_type} module imports successful')
+    total_failures = len(failed_imports) + len([t for t in functionality_tests if not t[1]])
+    
+    if total_failures == 0:
+        print(f'\n[OK] All package imports and functionality tests successful')
         return True
+    else:
+        print(f'\n[FAIL] {total_failures} test(s) failed')
+        return False
 
 
 def main():
