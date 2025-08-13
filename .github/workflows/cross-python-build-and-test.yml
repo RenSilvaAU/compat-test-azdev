@@ -157,14 +157,14 @@ jobs:
     - name: Test aaz-dev-tools with cross-built azdev (Unix)
       if: runner.os != 'Windows'
       run: |
-        chmod +x scripts/cross_test_aaz_unix.sh
-        scripts/cross_test_aaz_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
+        chmod +x scripts/test_aaz_unix.sh
+        scripts/test_aaz_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
         
     - name: Test aaz-dev-tools with cross-built azdev (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        scripts\cross_test_aaz_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
+        scripts\test_aaz_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
 
   test-azure-cli-requirements-cross:
     name: "azure-cli-reqs: Python ${{ matrix.python-version }} on ${{ matrix.os }} (azdev built with Py${{ github.event.inputs.azdev_build_python_version }})"
@@ -204,14 +204,14 @@ jobs:
     - name: Test azure-cli requirements with cross-built azdev (Unix)
       if: runner.os != 'Windows'
       run: |
-        chmod +x scripts/cross_test_azure_cli_unix.sh
-        scripts/cross_test_azure_cli_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
+        chmod +x scripts/test_azure_cli_unix.sh
+        scripts/test_azure_cli_unix.sh ${{ matrix.python-version }} ${{ matrix.os }}
         
     - name: Test azure-cli requirements with cross-built azdev (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        scripts\cross_test_azure_cli_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
+        scripts\test_azure_cli_windows.ps1 -PythonVersion "${{ matrix.python-version }}" -OSName "${{ matrix.os }}"
         
     - name: Upload test results
       if: always()
