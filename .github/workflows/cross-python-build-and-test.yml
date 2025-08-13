@@ -157,16 +157,6 @@ jobs:
         cd aaz-dev-tools
         git checkout ${{ github.event.inputs.aaz_dev_tools_branch }}
         
-    - name: Clean Windows environment (Windows only)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        # Force cleanup of any existing test environments
-        Remove-Item -Recurse -Force test_env -ErrorAction SilentlyContinue
-        Get-ChildItem -Path . -Filter "test_env*" -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-        # Clear pip cache
-        python -m pip cache purge -ErrorAction SilentlyContinue
-        
     - name: Test aaz-dev-tools with cross-built azdev (Unix)
       if: runner.os != 'Windows'
       run: |
@@ -215,16 +205,6 @@ jobs:
       with:
         name: cross-test-artifacts-${{ matrix.os }}-py${{ github.event.inputs.azdev_build_python_version }}-${{ github.run_number }}
         path: artifacts/
-        
-    - name: Clean Windows environment (Windows only)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        # Force cleanup of any existing test environments
-        Remove-Item -Recurse -Force test_env -ErrorAction SilentlyContinue
-        Get-ChildItem -Path . -Filter "test_env*" -Directory | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-        # Clear pip cache
-        python -m pip cache purge -ErrorAction SilentlyContinue
         
     - name: Test azure-cli requirements with cross-built azdev (Unix)
       if: runner.os != 'Windows'

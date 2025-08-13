@@ -14,7 +14,7 @@ Write-Host "OS: $OSName"
 
 # Create virtual environment
 python -m venv test_env
-& "test_env\Scripts\Activate.ps1"
+test_env\Scripts\Activate.ps1
 
 # Upgrade pip and install build tools
 python -m pip install --upgrade pip setuptools wheel
@@ -22,9 +22,11 @@ python -m pip install --upgrade pip setuptools wheel
 # Install azdev wheel (look in both possible locations)
 $WHEEL_FILE = $null
 if (Test-Path "..\artifacts\azdev-*.whl") {
-    $WHEEL_FILE = Get-ChildItem -Path "..\artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
+    $WHEEL_FILE = Get-ChildItem -Path "..\artifacts\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty Name
+    $WHEEL_PATH = "..\artifacts\$WHEEL_FILE"
 } elseif (Test-Path "azure-cli-dev-tools\dist\azdev-*.whl") {
-    $WHEEL_FILE = Get-ChildItem -Path "azure-cli-dev-tools\dist\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty FullName
+    $WHEEL_FILE = Get-ChildItem -Path "azure-cli-dev-tools\dist\" -Filter "azdev-*.whl" | Select-Object -First 1 -ExpandProperty Name
+    $WHEEL_PATH = "azure-cli-dev-tools\dist\$WHEEL_FILE"
 }
 
 if (-not $WHEEL_FILE) {
@@ -35,8 +37,8 @@ if (-not $WHEEL_FILE) {
     Get-ChildItem -Path "azure-cli-dev-tools\dist\" -ErrorAction SilentlyContinue
     exit 1
 }
-Write-Host "Installing azdev wheel: $WHEEL_FILE"
-python -m pip install $WHEEL_FILE
+Write-Host "Installing azdev wheel: $WHEEL_PATH"
+python -m pip install $WHEEL_PATH
 
 # Install azure-cli requirements (look in both possible locations)
 $REQUIREMENTS_FILE = $null
